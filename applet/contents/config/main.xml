@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The applet's own copy of the preferences, so Plasma's standard configuration
+  dialog works normally (Apply, Cancel, Defaults). dripd keeps its own copy in
+  ~/.config/driprc because it has to receive files with no widget on any panel;
+  main.qml pushes changes across whenever this side moves.
+-->
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+                          http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+
+  <kcfgfile name=""/>
+
+  <group name="General">
+    <entry name="destinationRoot" type="String">
+      <label>Folder that received files are saved into</label>
+      <!-- Empty means "not chosen yet"; the applet seeds it from the daemon,
+           which knows the XDG download location. -->
+      <default></default>
+    </entry>
+
+    <entry name="autoAccept" type="Bool">
+      <label>Save arriving files without asking</label>
+      <default>true</default>
+    </entry>
+
+    <entry name="groupBySender" type="Bool">
+      <label>Sort received files into a subfolder per sender</label>
+      <default>true</default>
+    </entry>
+
+    <entry name="keepHistory" type="Bool">
+      <label>Keep a record of finished transfers</label>
+      <default>true</default>
+    </entry>
+
+    <!-- Never reaches the daemon: it only describes how the panel draws. -->
+    <entry name="avatarSize" type="Int">
+      <label>Device picture size in pixels</label>
+      <default>56</default>
+    </entry>
+  </group>
+</kcfg>

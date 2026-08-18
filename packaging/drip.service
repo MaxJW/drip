@@ -1,0 +1,27 @@
+[Unit]
+Description=drip — Taildrop engine
+Documentation=https://tailscale.com/docs/features/taildrop
+# tailscaled is a system service; we only need the graphical session, since
+# arrivals raise desktop notifications.
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/dripd
+Restart=on-failure
+RestartSec=3
+
+# Deliberately no PrivateTmp: it gives the service its own /tmp namespace, which
+# makes every file under /tmp invisible to dripd. Dragging a screenshot or an
+# extracted archive out of /tmp is completely ordinary, and it failed silently.
+# The engine reads files the user points it at, so it cannot have a private view
+# of the filesystem.
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=graphical-session.target

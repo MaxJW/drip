@@ -1,0 +1,46 @@
+# Maintainer: Max Wilson <max@maxwilson.co.uk>
+#
+# System-wide install for Arch and derivatives (CachyOS, EndeavourOS, Manjaro).
+# Unlike packaging/install.sh this puts everything under /usr, so every user on
+# the machine gets the widget -- each still runs their own dripd.
+
+pkgname=drip
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Taildrop, by drag and drop -- a Plasma 6 tray applet for sending files across your tailnet"
+arch=('x86_64' 'aarch64')
+url="https://github.com/MaxJW/drip"
+license=('GPL-3.0-or-later')
+
+depends=(
+    'qt6-base'
+    'qt6-declarative'
+    'kconfig'
+    'kcoreaddons'
+    'ki18n'
+    'knotifications'
+    'kio'
+    'kwindowsystem'
+    'plasma-workspace'
+    'tailscale'
+)
+makedepends=('cmake' 'ninja' 'extra-cmake-modules')
+
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cmake -B build -S "$pkgname-$pkgver" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_TESTING=OFF
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+    install -Dm644 "$pkgname-$pkgver/applet/contents/icons/drip.svg" \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/drip.svg"
+    install -Dm644 "$pkgname-$pkgver/packaging/drip.service" \
+        "$pkgdir/usr/lib/systemd/user/drip.service"
+}

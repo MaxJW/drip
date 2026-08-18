@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  drip's mark: a single droplet.
+
+  Breeze ships a "raindrop" icon, but it is three small drops and turns to
+  mush at tray size. One drop is legible at 16px and reads as the name.
+
+  The flanks leave the apex and arrive at the circle's horizontal extremes
+  vertically, so they meet the bowl tangentially and the silhouette has no
+  kink. Drawn as a solid shape because it is rendered as a mask.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" width="22" height="22">
+  <defs>
+    <style type="text/css" id="current-color-scheme">
+      .ColorScheme-Text { color: #232629; }
+    </style>
+  </defs>
+  <path
+    class="ColorScheme-Text"
+    style="fill:currentColor;fill-opacity:1;stroke:none"
+    d="M 11 2
+       C 13 3.5 16.8 8 16.8 13.4
+       A 5.8 5.8 0 0 1 5.2 13.4
+       C 5.2 8 9 3.5 11 2
+       Z" />
+</svg>

@@ -1,0 +1,53 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # KDE Frameworks 6 and Plasma 6 dev packages. The plasma-workspace-dev
+      # package is what provides the Plasma/Applet KPackage structure that the
+      # applet installs against.
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build extra-cmake-modules \
+            qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools \
+            libkf6config-dev libkf6coreaddons-dev libkf6i18n-dev \
+            libkf6notifications-dev libkf6kio-dev libkf6windowsystem-dev
+
+      - name: Configure
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Install to a staging root
+        run: DESTDIR="${PWD}/stage" cmake --install build
+
+      # A missing or malformed QML file is invisible at build time and fatal at
+      # runtime. i18n is injected by Plasma, so unqualified access is disabled.
+      - name: Lint QML
+        run: |
+          qmllint=$(ls /usr/lib/qt6/bin/qmllint /usr/lib/*/qt6/bin/qmllint 2>/dev/null | head -1)
+          # The applet imports dev.drip, so point the linter at the module that
+          # was just staged rather than at a system import path.
+          plugin=$(find stage -name libdripplugin.so | head -1)
+          qmlpath=$(dirname "$(dirname "$(dirname "$plugin")")")
+          "$qmllint" --unqualified disable \
+            -I "$qmlpath" -I applet/contents/ui \
+            applet/contents/ui/*.qml applet/contents/config/config.qml
+
+      - name: Show what would be installed
+        run: find stage -type f | sort

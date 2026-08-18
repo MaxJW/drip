@@ -1,0 +1,23 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API": "declarativeappletscript",
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-MainScript": "ui/main.qml",
+    "X-Plasma-NotificationArea": "true",
+    "X-Plasma-NotificationAreaCategory": "ApplicationStatus",
+    "KPlugin": {
+        "Id": "dev.drip.applet",
+        "Name": "drip",
+        "Description": "Send and receive files over Taildrop by drag and drop",
+        "Icon": "drip",
+        "Category": "Utilities",
+        "License": "GPL-3.0-or-later",
+        "Version": "0.1.0",
+        "EnabledByDefault": true,
+        "Authors": [
+            {
+                "Name": "Max Wilson"
+            }
+        ]
+    }
+}

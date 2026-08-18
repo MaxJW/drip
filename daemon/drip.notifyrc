@@ -1,0 +1,22 @@
+[Global]
+IconName=drip
+Name=drip
+Comment=Taildrop file sharing
+
+[Event/arrivalPending]
+Name=File offered
+Comment=Someone sent a file and drip is waiting for you to accept it
+Action=Popup
+Urgency=Normal
+
+[Event/fileReceived]
+Name=File received
+Comment=A file arrived over Taildrop
+Action=Popup
+Sound=service-login
+
+[Event/transferFailed]
+Name=Transfer failed
+Comment=A file could not be sent or received
+Action=Popup
+Urgency=High
