@@ -7,6 +7,7 @@ add_executable(dripd
     notifier.cpp
     dbusservice.cpp
     settings.cpp
+    archiver.cpp
 )
 
 target_link_libraries(dripd PRIVATE
@@ -16,6 +17,8 @@ target_link_libraries(dripd PRIVATE
     Qt6::Widgets
     Qt6::Network
     Qt6::DBus
+    Qt6::Concurrent
+    KF6::Archive
     KF6::ConfigCore
     KF6::CoreAddons
     KF6::I18n

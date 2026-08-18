@@ -20,6 +20,8 @@ namespace
 QString stateName(TransferState state)
 {
     switch (state) {
+    case TransferState::Packing:
+        return QStringLiteral("packing");
     case TransferState::Queued:
         return QStringLiteral("queued");
     case TransferState::Active:

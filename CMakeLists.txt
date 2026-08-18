@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(drip VERSION 0.1.0 LANGUAGES CXX)
+project(drip VERSION 0.2.0 LANGUAGES CXX)
 
 set(QT_MIN_VERSION 6.6.0)
 set(KF_MIN_VERSION 6.0.0)
@@ -25,9 +25,11 @@ find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS
     DBus
     Qml
     Quick
+    Concurrent
 )
 
 find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS
+    Archive
     Config
     CoreAddons
     I18n

@@ -13,6 +13,7 @@
 #include <QQueue>
 #include <QString>
 
+class Archiver;
 class LocalApi;
 class LocalApiReply;
 class Tailnet;
@@ -23,6 +24,7 @@ enum class TransferDirection {
 };
 
 enum class TransferState {
+    Packing, ///< a dropped folder is being zipped; nothing is on the wire yet
     Queued,
     Active,
     Completed,
@@ -72,7 +74,11 @@ class TransferManager : public QObject
 public:
     TransferManager(LocalApi *api, Tailnet *tailnet, QObject *parent = nullptr);
 
-    /** Queue one file. Returns the transfer id, or empty if the path is unusable. */
+    /**
+     * Queue one path. A directory is zipped first, so the entry appears at once
+     * and starts uploading when the archive is ready.
+     * Returns the transfer id, or empty if the path is unusable.
+     */
     QString send(const QString &deviceId, const QString &filePath);
     /** Queue several files to one device, preserving order. */
     QStringList sendAll(const QString &deviceId, const QStringList &filePaths);
@@ -106,6 +112,7 @@ Q_SIGNALS:
     void historyCleared();
 
 private:
+    void beginPacking(Transfer &transfer, const QString &directory);
     void pumpDevice(const QString &deviceId);
     void startTransfer(const QString &transferId);
     Transfer *find(const QString &id);
@@ -114,6 +121,7 @@ private:
 
     LocalApi *m_api;
     Tailnet *m_tailnet;
+    Archiver *m_archiver;
 
     QList<Transfer> m_ledger;
     bool m_keepHistory = true;

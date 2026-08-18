@@ -8,6 +8,10 @@ showing your devices as a row of avatars. Drop on one and it sends. Incoming
 files land owned by you, with a notification — or wait for you to accept them,
 if you'd rather.
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="drip's panel: a row of devices, a send-clipboard button, and recent transfers" width="400">
+</p>
+
 ## Why this exists
 
 Taildrop works from the CLI — `tailscale file cp <file> <host>:` to send,
@@ -56,6 +60,12 @@ sudo tailscale set --operator=$USER
   dragging onto a device and release.
 - **Drop straight on the tray icon** when exactly one device is reachable.
 - **Click an avatar** to pick files with the normal file dialog.
+- **Send the clipboard** with the button under the devices — text arrives as a
+  `.txt`, a copied image as a `.png`, and copied files are sent as they are. If
+  only one device is reachable it goes straight there; otherwise pick one.
+- **Drop a folder** and drip offers to zip it first, because Taildrop moves one
+  file at a time. The archive keeps the folder structure, so it unpacks as the
+  folder you sent.
 - **Click the folder path** at the bottom to open your downloads in your file
   manager, or the folder button on any history row to reveal that one file —
   for what you sent as well as what you received.
@@ -63,6 +73,10 @@ sudo tailscale set --operator=$USER
   accept automatically, whether to sort by sender, whether to keep history, and
   the size of the device pictures. This is Plasma's own configuration dialog,
   not a second settings UI.
+
+<p align="center">
+  <img src="docs/screenshot-zip.png" alt="drip asking whether to zip a dropped folder before sending" width="400">
+</p>
 
 Turning history off is not cosmetic: finished transfers are dropped as they
 finish and anything already recorded is discarded. The history section then
@@ -153,6 +167,11 @@ Two other timers exist, both conditional: the panel re-asks every 4s while it is
 open, and the inbox re-asks every 3s while a file sits undecided — an undecided
 file leaves the inbox non-empty, which stops `waitsec` from blocking.
 
+Folders are zipped on a worker thread, since compressing a large one takes
+seconds and the daemon's event loop is also holding the inbox long-poll. The
+archive and any clipboard capture are written to `~/.cache/drip/outgoing`, which
+is also where the "show in folder" button on those history rows points.
+
 Settings appear in Plasma's standard configuration dialog, but the daemon keeps
 its own copy in `~/.config/driprc`: dripd receives files whether or not the
 widget is on a panel, so it has to answer "where does this go" and "should I ask
@@ -216,8 +235,8 @@ Tailscale on it" rather than "Offline" for this reason.
 
 - **Plasma only.** The tray drag interaction is a Plasma applet feature, not
   something a standalone app can do on Wayland.
-- **One file per transfer.** Taildrop has no directory support; dropping a
-  folder is not yet handled.
+- **One file per transfer.** Taildrop has no directory support, so a folder is
+  zipped and sent as a single archive rather than file by file.
 - **Sender attribution is inferred.** Taildrop's `WaitingFile` carries only a
   name and size, so the sender is derived from recent peer activity on the event
   bus at the moment the file arrives. When nothing plausible is in the window it
@@ -235,6 +254,7 @@ Tailscale on it" rather than "Offline" for this reason.
 
 ```
 common/    helpers shared by both binaries (size formatting, unique paths)
+docs/      screenshots
 daemon/    the engine: localapi · tailnet · transfers · inbox · settings · notifier · dbus
 plugin/    QML module: D-Bus client, list models, avatar cache
 applet/    the plasmoid: tray icon, panel, and the standard config page

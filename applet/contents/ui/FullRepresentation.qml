@@ -28,7 +28,9 @@ PlasmaExtras.Representation {
     readonly property bool showHistory: keepHistory || transferCount > 0
 
     readonly property int devicesHeight: Theme.space3 + deviceRow.implicitHeight
-    readonly property int arrivalsHeight: DripClient.pendingArrivals.count * Theme.arrivalRowHeight
+    readonly property int arrivalsHeight:
+        (DripClient.pendingArrivals.count + (Pending.folders.length > 0 ? 1 : 0)) * Theme.arrivalRowHeight
+    readonly property int clipboardHeight: DripClient.clipboardSendable ? Theme.space2 + 26 : 0
     readonly property int historyHeight: showHistory
         ? 1 + Theme.space2 + Math.min(300, Math.max(96, transferCount * 45 + Theme.space2 * 2))
         : 0
@@ -37,7 +39,7 @@ PlasmaExtras.Representation {
     Layout.minimumWidth: 340
     Layout.preferredWidth: 380
     Layout.minimumHeight: devicesHeight + footerHeight
-    Layout.preferredHeight: devicesHeight + arrivalsHeight + historyHeight + footerHeight
+    Layout.preferredHeight: devicesHeight + clipboardHeight + arrivalsHeight + historyHeight + footerHeight
 
     Behavior on Layout.preferredHeight {
         NumberAnimation { duration: Theme.durSlow; easing.type: Easing.OutCubic }
@@ -48,13 +50,41 @@ PlasmaExtras.Representation {
     property string pickerDeviceId: ""
     property string pickerDeviceName: ""
 
+    /** Armed by the clipboard chip: the next device chosen gets the clipboard. */
+    property bool clipboardArmed: false
+
+    /**
+     * Taildrop moves one file at a time, so a folder has to be zipped. Ask
+     * first: compressing a large folder is slow and the receiver gets a
+     * different thing from what was dropped.
+     */
+    function dispatch(deviceId, paths) {
+        const folders = DripClient.folderNames(paths)
+        if (folders.length === 0) {
+            DripClient.send(deviceId, paths)
+            return
+        }
+        Pending.hold(deviceId, paths, folders)
+    }
+
+    function chooseDevice(deviceId, deviceName) {
+        if (root.clipboardArmed) {
+            root.clipboardArmed = false
+            DripClient.sendClipboard(deviceId)
+            return
+        }
+        root.pickerDeviceId = deviceId
+        root.pickerDeviceName = deviceName
+        filePicker.open()
+    }
+
     Dialogs.FileDialog {
         id: filePicker
         title: root.pickerDeviceName ? "Send to " + root.pickerDeviceName : "Send files"
         fileMode: Dialogs.FileDialog.OpenFiles
         onAccepted: {
             if (root.pickerDeviceId) {
-                DripClient.send(root.pickerDeviceId, selectedFiles.map(u => u.toString()))
+                root.dispatch(root.pickerDeviceId, selectedFiles.map(u => u.toString()))
             }
         }
     }
@@ -82,20 +112,61 @@ PlasmaExtras.Representation {
                 avatarSize: Plasmoid.configuration.avatarSize
                 roomy: !root.showHistory
 
-                onDeviceActivated: (deviceId, deviceName) => {
-                    root.pickerDeviceId = deviceId
-                    root.pickerDeviceName = deviceName
-                    filePicker.open()
-                }
+                onDeviceActivated: (deviceId, deviceName) => root.chooseDevice(deviceId, deviceName)
 
                 onFilesDroppedOn: (deviceId, urls) => {
-                    DripClient.send(deviceId, urls.map(u => u.toString()))
+                    root.dispatch(deviceId, urls.map(u => u.toString()))
                     deviceRow.dragActive = false
                 }
             }
 
-            // Arrivals awaiting a decision, above the divider: the one thing
+            // Send what is on the clipboard. Armed rather than immediate,
+            // because it still needs a device to send to.
+            Item {
+                Layout.fillWidth: true
+                Layout.topMargin: DripClient.clipboardSendable ? Theme.space2 : 0
+                Layout.preferredHeight: DripClient.clipboardSendable ? 26 : 0
+                visible: DripClient.clipboardSendable
+
+                PillButton {
+                    anchors.centerIn: parent
+                    accent: root.clipboardArmed
+                    text: root.clipboardArmed
+                        ? "Now choose a device"
+                        : "Send clipboard  ·  " + DripClient.clipboardSummary
+                    onClicked: {
+                        const reachable = DripClient.reachableIds
+                        if (!root.clipboardArmed && reachable.length === 1) {
+                            DripClient.sendClipboard(reachable[0])
+                        } else {
+                            root.clipboardArmed = !root.clipboardArmed
+                        }
+                    }
+                }
+            }
+
+            // Anything awaiting a decision, above the divider: the one place
             // here that is asking a question.
+            PromptRow {
+                Layout.fillWidth: true
+                Layout.topMargin: Pending.folders.length > 0 ? Theme.space2 : 0
+                visible: Pending.folders.length > 0
+
+                iconSource: "archive-insert-directory"
+                title: "Folders are sent as a zip"
+                subtitle: Pending.folders.length === 1
+                    ? Pending.folders[0]
+                    : Pending.folders.length + " folders"
+                acceptText: "Zip and send"
+                declineText: "Cancel"
+
+                onAccepted: {
+                    DripClient.send(Pending.deviceId, Pending.paths)
+                    Pending.clear()
+                }
+                onDeclined: Pending.clear()
+            }
+
             Column {
                 Layout.fillWidth: true
                 Layout.topMargin: DripClient.pendingArrivals.count > 0 ? Theme.space2 : 0

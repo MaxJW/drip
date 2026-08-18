@@ -5,7 +5,7 @@
 # the machine gets the widget -- each still runs their own dripd.
 
 pkgname=drip
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="Taildrop, by drag and drop -- a Plasma 6 tray applet for sending files across your tailnet"
 arch=('x86_64' 'aarch64')
@@ -15,6 +15,7 @@ license=('GPL-3.0-or-later')
 depends=(
     'qt6-base'
     'qt6-declarative'
+    'karchive'
     'kconfig'
     'kcoreaddons'
     'ki18n'

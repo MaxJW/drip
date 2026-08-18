@@ -2,7 +2,13 @@ pragma Singleton
 
 import QtQuick
 
-/** Maps a Tailscale OS string to a themed icon name. */
+/**
+ * Maps a Tailscale OS string to a themed icon name.
+ *
+ * Only names that exist in Breeze and are widely carried by third-party icon
+ * themes: an unresolved name draws as a blank square, and this is the fallback
+ * shown when a device has no profile picture, so it has to be there.
+ */
 QtObject {
     /** A device picture, when no avatar is available. */
     readonly property int large: 0
@@ -12,15 +18,15 @@ QtObject {
     function forOs(os, role) {
         switch (os) {
         case "iOS":
-            return role === badge ? "phone-apple-iphone" : "computer-apple-ipad"
-        case "macOS":
-            return role === badge ? "computer-apple" : "computer-apple-ipad"
         case "android":
-            return "phone"
+            return role === badge ? "phone" : "smartphone"
+        case "macOS":
+        case "linux":
+            return role === badge ? "computer" : "computer-laptop"
         case "windows":
             return "computer"
         default:
-            return "computer-laptop"
+            return role === badge ? "computer" : "computer-laptop"
         }
     }
 }

@@ -6,6 +6,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QStandardPaths>
 
 namespace drip
 {
@@ -41,6 +42,14 @@ QString uniquePath(const QString &directory, const QString &fileName)
         }
     }
     return dir.filePath(fileName);
+}
+
+QString outgoingCacheDirectory()
+{
+    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)
+        + QStringLiteral("/drip/outgoing");
+    QDir().mkpath(path);
+    return path;
 }
 
 QString abbreviateHome(const QString &path)

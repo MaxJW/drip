@@ -3,6 +3,8 @@
  */
 
 #include "transfers.h"
+
+#include "archiver.h"
 #include "localapi.h"
 #include "tailnet.h"
 
@@ -24,7 +26,37 @@ TransferManager::TransferManager(LocalApi *api, Tailnet *tailnet, QObject *paren
     : QObject(parent)
     , m_api(api)
     , m_tailnet(tailnet)
+    , m_archiver(new Archiver(this))
 {
+    // Connected once and dispatched by transfer id: several folders can be
+    // compressing at the same time.
+    connect(m_archiver, &Archiver::packed, this, [this](const QString &token, const QString &archivePath, qint64 size) {
+        Transfer *entry = find(token);
+        if (!entry || entry->state != TransferState::Packing) {
+            // Cancelled while it was compressing; do not leave the zip behind.
+            QFile::remove(archivePath);
+            return;
+        }
+        entry->localPath = archivePath;
+        entry->size = size;
+        entry->state = TransferState::Queued;
+        const QString deviceId = entry->deviceId;
+        publish(*entry);
+
+        m_queues[deviceId].enqueue(token);
+        pumpDevice(deviceId);
+    });
+
+    connect(m_archiver, &Archiver::failed, this, [this](const QString &token, const QString &message) {
+        Transfer *entry = find(token);
+        if (!entry || entry->state != TransferState::Packing) {
+            return;
+        }
+        entry->state = TransferState::Failed;
+        entry->error = message;
+        entry->finishedAt = QDateTime::currentDateTime();
+        publish(*entry);
+    });
 }
 
 Transfer *TransferManager::find(const QString &id)
@@ -111,6 +143,18 @@ QString TransferManager::send(const QString &deviceId, const QString &filePath)
     transfer.direction = TransferDirection::Outgoing;
     transfer.queuedAt = QDateTime::currentDateTime();
 
+    // A folder is sent as a zip: Taildrop moves one file at a time.
+    if (info.isDir()) {
+        transfer.fileName = info.fileName() + QStringLiteral(".zip");
+        transfer.size = -1;
+        transfer.state = TransferState::Packing;
+        m_ledger.prepend(transfer);
+        trimHistory();
+        Q_EMIT transferAdded(transfer);
+        beginPacking(transfer, info.absoluteFilePath());
+        return transfer.id;
+    }
+
     // An unreadable path still gets a ledger entry, so the drop reports itself
     // rather than silently amounting to nothing.
     if (!info.exists() || !info.isFile()) {
@@ -133,6 +177,11 @@ QString TransferManager::send(const QString &deviceId, const QString &filePath)
     m_queues[deviceId].enqueue(transfer.id);
     pumpDevice(deviceId);
     return transfer.id;
+}
+
+void TransferManager::beginPacking(Transfer &transfer, const QString &directory)
+{
+    m_archiver->pack(transfer.id, directory);
 }
 
 void TransferManager::pumpDevice(const QString &deviceId)

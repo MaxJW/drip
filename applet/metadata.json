@@ -12,7 +12,7 @@
         "Icon": "drip",
         "Category": "Utilities",
         "License": "GPL-3.0-or-later",
-        "Version": "0.1.0",
+        "Version": "0.2.0",
         "EnabledByDefault": true,
         "Authors": [
             {

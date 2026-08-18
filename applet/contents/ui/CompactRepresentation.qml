@@ -48,11 +48,22 @@ DropArea {
         }
 
         const targets = DripClient.reachableIds
-        if (targets.length === 1) {
-            DripClient.send(targets[0], drop.urls.map(u => u.toString()))
-            drop.accepted = true
-        } else {
+        if (targets.length !== 1) {
             root.plasmoidItem.expanded = true
+            return
+        }
+
+        const paths = drop.urls.map(u => u.toString())
+        drop.accepted = true
+
+        // A folder has to be zipped, and that is a question, so hand it to the
+        // panel to ask rather than deciding on the user's behalf here.
+        const folders = DripClient.folderNames(paths)
+        if (folders.length > 0) {
+            Pending.hold(targets[0], paths, folders)
+            root.plasmoidItem.expanded = true
+        } else {
+            DripClient.send(targets[0], paths)
         }
     }
 

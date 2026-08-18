@@ -8,6 +8,7 @@
 
 #include <KIO/OpenFileManagerWindowJob>
 
+#include <QClipboard>
 #include <QDBusConnection>
 #include <QDBusInterface>
 #include <QDBusReply>
@@ -15,10 +16,14 @@
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
+#include <QGuiApplication>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMimeData>
 #include <QUrl>
 
 namespace
@@ -59,6 +64,8 @@ DripClient::DripClient(QObject *parent)
         m_devices->clear();
         m_pendingArrivals->clear();
     });
+
+    connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, this, &DripClient::clipboardChanged);
 
     connectToDaemon();
 }
@@ -396,6 +403,104 @@ QString DripClient::formatRelativeTime(const QString &isoTimestamp) const
         return tr("%n day(s) ago", nullptr, int(seconds / 86400));
     }
     return when.date().toString(QStringLiteral("d MMM"));
+}
+
+bool DripClient::clipboardSendable() const
+{
+    const QMimeData *mime = QGuiApplication::clipboard()->mimeData();
+    if (!mime) {
+        return false;
+    }
+    return mime->hasImage() || mime->hasUrls() || !mime->text().trimmed().isEmpty();
+}
+
+QString DripClient::clipboardSummary() const
+{
+    const QMimeData *mime = QGuiApplication::clipboard()->mimeData();
+    if (!mime) {
+        return {};
+    }
+    if (mime->hasImage()) {
+        const QImage image = qvariant_cast<QImage>(mime->imageData());
+        return image.isNull() ? tr("Image")
+                              : tr("Image · %1×%2").arg(image.width()).arg(image.height());
+    }
+    if (mime->hasUrls()) {
+        const QList<QUrl> urls = mime->urls();
+        return urls.size() == 1 ? QFileInfo(urls.first().toLocalFile()).fileName()
+                                : tr("%n files", nullptr, int(urls.size()));
+    }
+    const QString text = mime->text().trimmed();
+    if (text.isEmpty()) {
+        return {};
+    }
+    return tr("Text · %1").arg(drip::humanSize(text.toUtf8().size()));
+}
+
+void DripClient::sendClipboard(const QString &deviceId)
+{
+    const QMimeData *mime = QGuiApplication::clipboard()->mimeData();
+    if (!mime || deviceId.isEmpty()) {
+        return;
+    }
+
+    // Copied files are already files; send them rather than a copy.
+    if (mime->hasUrls() && !mime->hasImage()) {
+        QStringList paths;
+        for (const QUrl &url : mime->urls()) {
+            if (url.isLocalFile()) {
+                paths += url.toLocalFile();
+            }
+        }
+        if (!paths.isEmpty()) {
+            send(deviceId, paths);
+            return;
+        }
+    }
+
+    const QString directory = drip::outgoingCacheDirectory();
+    // A readable name, because this is what the other end sees arrive.
+    const QString stamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH-mm-ss"));
+
+    QString path;
+    if (mime->hasImage()) {
+        const QImage image = qvariant_cast<QImage>(mime->imageData());
+        if (image.isNull()) {
+            return;
+        }
+        path = drip::uniquePath(directory, tr("Screenshot %1.png").arg(stamp));
+        if (!image.save(path, "PNG")) {
+            return;
+        }
+    } else {
+        const QString text = mime->text();
+        if (text.trimmed().isEmpty()) {
+            return;
+        }
+        path = drip::uniquePath(directory, tr("Clipboard %1.txt").arg(stamp));
+        QFile file(path);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            return;
+        }
+        file.write(text.toUtf8());
+        file.close();
+    }
+
+    send(deviceId, {path});
+}
+
+QStringList DripClient::folderNames(const QStringList &paths) const
+{
+    QStringList names;
+    for (const QString &entry : paths) {
+        const QUrl url(entry);
+        const QString local = url.isLocalFile() ? url.toLocalFile() : entry;
+        const QFileInfo info(local);
+        if (info.isDir()) {
+            names += info.fileName();
+        }
+    }
+    return names;
 }
 
 #include "moc_dripclient.cpp"

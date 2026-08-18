@@ -41,6 +41,11 @@ class DripClient : public QObject
     /** Devices that could accept a file right now. */
     Q_PROPERTY(QStringList reachableIds READ reachableIds NOTIFY reachableIdsChanged)
 
+    /** True when the clipboard holds something drip can turn into a file. */
+    Q_PROPERTY(bool clipboardSendable READ clipboardSendable NOTIFY clipboardChanged)
+    /** Short description of what would be sent, e.g. "Image · 1920x1080". */
+    Q_PROPERTY(QString clipboardSummary READ clipboardSummary NOTIFY clipboardChanged)
+
 public:
     explicit DripClient(QObject *parent = nullptr);
 
@@ -80,6 +85,17 @@ public:
     void setGroupBySender(bool on);
     void setKeepHistory(bool on);
 
+    bool clipboardSendable() const;
+    QString clipboardSummary() const;
+    /**
+     * Write the clipboard to a file and send it: text becomes .txt, an image
+     * becomes .png, and copied files are sent as they are.
+     */
+    Q_INVOKABLE void sendClipboard(const QString &deviceId);
+
+    /** Which of @p paths are directories, by name, for the zip prompt. */
+    Q_INVOKABLE QStringList folderNames(const QStringList &paths) const;
+
     Q_INVOKABLE void acceptArrival(const QString &name);
     Q_INVOKABLE void declineArrival(const QString &name);
 
@@ -106,6 +122,7 @@ Q_SIGNALS:
     void activeCountChanged();
     void reachableIdsChanged();
     void settingsChanged();
+    void clipboardChanged();
     /** Something arrived; the tray icon uses this to raise its dot. */
     void fileReceived(const QString &fileName, const QString &deviceName);
     /** Something needs a decision; the applet opens itself on this. */

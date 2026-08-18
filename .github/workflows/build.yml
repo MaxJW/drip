@@ -20,7 +20,7 @@ jobs:
           pacman -Syu --noconfirm --needed \
             git base-devel cmake ninja extra-cmake-modules \
             qt6-base qt6-declarative qt6-tools \
-            kconfig kcoreaddons ki18n knotifications kio kwindowsystem
+            karchive kconfig kcoreaddons ki18n knotifications kio kwindowsystem
 
       - uses: actions/checkout@v4
 

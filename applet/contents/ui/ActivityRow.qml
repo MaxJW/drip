@@ -29,7 +29,8 @@ Item {
 
     height: 44
 
-    readonly property bool running: transferState === "active" || transferState === "queued"
+    readonly property bool packing: transferState === "packing"
+    readonly property bool running: packing || transferState === "active" || transferState === "queued"
     readonly property bool failed: transferState === "failed" || transferState === "cancelled"
     readonly property bool hasFile: !running && transferState === "completed" && path !== ""
 
@@ -44,7 +45,7 @@ Item {
 
     // Determinate fill behind a running transfer, so the row is its own bar.
     Rectangle {
-        visible: root.running && root.progress >= 0
+        visible: root.running && !root.packing && root.progress >= 0
         anchors.left: parent.left
         anchors.leftMargin: Theme.space2
         anchors.verticalCenter: parent.verticalCenter
@@ -93,6 +94,9 @@ Item {
                 font.pixelSize: Theme.sizeMeta
                 elide: Text.ElideRight
                 text: {
+                    if (root.packing) {
+                        return "compressing…"
+                    }
                     if (root.transferState === "failed") {
                         return root.error || "failed"
                     }

@@ -52,32 +52,32 @@ suggest_packages() {
         *arch*)
             echo "sudo pacman -S --needed base-devel cmake ninja extra-cmake-modules \\"
             echo "    qt6-base qt6-declarative qt6-tools \\"
-            echo "    kconfig kcoreaddons ki18n knotifications kio kwindowsystem plasma-framework"
+            echo "    karchive kconfig kcoreaddons ki18n knotifications kio kwindowsystem plasma-framework"
             ;;
         *debian*|*ubuntu*)
             echo "sudo apt install build-essential cmake ninja-build extra-cmake-modules \\"
             echo "    qt6-base-dev qt6-declarative-dev \\"
-            echo "    libkf6config-dev libkf6coreaddons-dev libkf6i18n-dev \\"
+            echo "    libkf6archive-dev libkf6config-dev libkf6coreaddons-dev libkf6i18n-dev \\"
             echo "    libkf6notifications-dev libkf6kio-dev libkf6windowsystem-dev \\"
             echo "    plasma-workspace-dev"
             ;;
         *fedora*|*rhel*)
             echo "sudo dnf install gcc-c++ cmake ninja-build extra-cmake-modules \\"
             echo "    qt6-qtbase-devel qt6-qtdeclarative-devel \\"
-            echo "    kf6-kconfig-devel kf6-kcoreaddons-devel kf6-ki18n-devel \\"
+            echo "    kf6-karchive-devel kf6-kconfig-devel kf6-kcoreaddons-devel kf6-ki18n-devel \\"
             echo "    kf6-knotifications-devel kf6-kio-devel kf6-kwindowsystem-devel \\"
             echo "    plasma-workspace-devel"
             ;;
         *suse*)
             echo "sudo zypper install -t pattern devel_C_C++ && sudo zypper install cmake ninja \\"
             echo "    extra-cmake-modules qt6-base-devel qt6-declarative-devel \\"
-            echo "    kf6-kconfig-devel kf6-kcoreaddons-devel kf6-ki18n-devel \\"
+            echo "    kf6-karchive-devel kf6-kconfig-devel kf6-kcoreaddons-devel kf6-ki18n-devel \\"
             echo "    kf6-knotifications-devel kf6-kio-devel kf6-kwindowsystem-devel"
             ;;
         *)
             echo "Install: a C++20 compiler, cmake, ninja, extra-cmake-modules,"
             echo "Qt 6 (Base, Declarative) and KDE Frameworks 6"
-            echo "(Config, CoreAddons, I18n, Notifications, KIO, WindowSystem)."
+            echo "(Archive, Config, CoreAddons, I18n, Notifications, KIO, WindowSystem)."
             ;;
     esac
 }
