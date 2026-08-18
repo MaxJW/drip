@@ -39,9 +39,11 @@ jobs:
       # is disabled rather than reported for every translated string.
       - name: Lint QML
         run: |
+          # Qt's tools are not on PATH on Arch.
+          qmllint=$(command -v qmllint || echo /usr/lib/qt6/bin/qmllint)
           plugin=$(find stage -name libdripplugin.so | head -1)
           qmlpath=$(dirname "$(dirname "$(dirname "$plugin")")")
-          qmllint --unqualified disable \
+          "$qmllint" --unqualified disable \
             -I "$qmlpath" -I applet/contents/ui \
             applet/contents/ui/*.qml applet/contents/config/config.qml
 
